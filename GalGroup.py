@@ -212,7 +212,7 @@ def main(dataframe, zmin=0.002, zmax=0.65, mag_col='R_PETRO', Z_col='Z_TONRY', K
 
     dataframe['v'] = dataframe[Z_col] * c.value
     grouped_velocities = dataframe.groupby('RecID')['v'].apply(list)
-
+    
     def calc_velocity_disp(group_vel, rec_z, vel_errors):
         N = len(group_vel)
         if N < 2:
@@ -225,13 +225,16 @@ def main(dataframe, zmin=0.002, zmax=0.65, mag_col='R_PETRO', Z_col='Z_TONRY', K
         if serr > sgap:
             return sraw, 0
         return sraw, np.sqrt(((N / (N - 1)) * sgap**2) - serr**2) # equation 17 of Robotham et al. 2011
-
+    
     sraw = []
     s = []
     for i in tqdm(dfRec['RecID']):
         group_vel = grouped_velocities[i]
         rec_z = dfRec.loc[dfRec['RecID'] == i, 'Z'].values[0]
-        vel_errors = dataframe.loc[dataframe['RecID'] == i, vel_err_col].values
+        if vel_err_col is None:
+            vel_errors = np.zeros(len(group_vel))
+        else:
+            vel_errors = dataframe.loc[dataframe['RecID'] == i, vel_err_col].values
         sraw_val, s_val = calc_velocity_disp(group_vel, rec_z, vel_errors)
         sraw.append(sraw_val)
         s.append(s_val)
